@@ -3,6 +3,7 @@
 
 
 **开发者：** 赵子健、陈廷尉、孟凡一、蔡智捷 
+
 **设备：** ESP32-S3 （支持ESP32其他型号）
 
 
@@ -54,6 +55,8 @@ def func(csi_amplitude_array, csi_phase_array, csi_shape, lock): #可根据需�
             读取csi_amplitude_matrix/csi_phase_matrix
 ```
 
+
+
 **可用变量说明：**
 
 csi_shape：幅度和相位的shape，大小为“100\*52”，其中100是cache大小，52是载波数（cache大小可通过args修改）
@@ -71,7 +74,18 @@ with lock:
 
 lock：csi_amplitude_array、csi_amplitude_array的读写锁
 
+
+
 **函数接入系统参考：**
 
-![image-20240119125845584](C:\Users\44870\AppData\Roaming\Typora\typora-user-images\image-20240119125845584.png)
+```python
+def show_csi():
+    global process_show_csi
+    if process_show_csi is None:
+        process_show_csi = multiprocessing.Process(target=show_csi_func, args=(lock,csi_amplitude_array,cache_len,csi_shape))
+        process_show_csi.start()
+    else:
+        process_show_csi.kill()
+        process_show_csi=None
+```
 
