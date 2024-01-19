@@ -18,7 +18,7 @@
 python main.py --port <port>
 ```
 
-![](https://raw.githubusercontent.com/RS2002/ESP32-Realtime-System/main/fig/ui.png?token=GHSAT0AAAAAAB7J2R4YS56E3J3Q56MQ5LTAZNKAIHQ)
+![](./fig/ui.png)
 
 更多参数可使用获取
 
