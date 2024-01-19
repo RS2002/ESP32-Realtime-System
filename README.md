@@ -2,8 +2,8 @@
 
 
 
-**开发者：**赵子健、陈廷尉、孟凡一、蔡智捷
-**设备：**ESP32-S3 （支持ESP32其他型号）
+**开发者：** 赵子健、陈廷尉、孟凡一、蔡智捷 
+**设备：** ESP32-S3 （支持ESP32其他型号）
 
 
 
@@ -17,7 +17,7 @@
 python main.py --port <port>
 ```
 
-![](https://raw.githubusercontent.com/RS2002/ESP32-Realtime-System/main/fig/ui.png?token=GHSAT0AAAAAAB7J2R4YJUYGXXOJ5PM4CYHQZNJ7VBQ)
+![](https://raw.githubusercontent.com/RS2002/ESP32-Realtime-System/main/fig/ui.png?token=GHSAT0AAAAAAB7J2R4YS56E3J3Q56MQ5LTAZNKAIHQ)
 
 更多参数可使用获取
 
@@ -35,9 +35,9 @@ python main.py --help
 
 ## 开发说明
 
-**待开发内容：**呼吸检测、跌倒检测、轨迹跟踪
+**待开发内容：** 呼吸检测、跌倒检测、轨迹跟踪
 
-**可使用的变量：**CSI幅度、相位
+**可使用的变量：** CSI幅度、相位
 
 **使用方法：**
 
