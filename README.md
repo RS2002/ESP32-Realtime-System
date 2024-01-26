@@ -60,7 +60,7 @@ def func(csi_amplitude_array, csi_phase_array, csi_shape, lock): #可根据需�
 **可用变量说明：**
 
 csi_shape：幅度和相位的shape，大小为“100\*52”，其中100是cache大小，52是载波数（cache大小可通过args修改）
-csi_amplitude_array、csi_amplitude_array：形状都为“100\*52”，更新逻辑如下（即最新的数据被添加在array末尾），其中phase是角度制（-180~180）
+csi_amplitude_array、csi_phase_array：形状都为“100\*52”，更新逻辑如下（即最新的数据被添加在array末尾），其中phase是角度制（-180~180）
 
 ```python
 # 更新cache
@@ -72,7 +72,7 @@ with lock:
     csi_phase_matrix[-1] = np.angle(csi_data_array,deg=True)
 ```
 
-lock：csi_amplitude_array、csi_amplitude_array的读写锁
+lock：csi_amplitude_array、csi_phase_array的读写锁
 
 
 

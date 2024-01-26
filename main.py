@@ -9,6 +9,7 @@ from get_csi import get_csi
 from show_csi import show_csi_func
 from intrusion_detection import intrusion_detection_func,intrusion_history_func,intrusion_plot
 from gesture_recognition import gesture_recognition,gesture_recognition_plot
+from breath_detection import breath_detection_func,breath_plot
 
 process_show_csi=None
 process_gesture_classification=None
@@ -16,14 +17,19 @@ process_gesture_plot=None
 process_intrusion_detection=None
 process_intrusion_plot=None
 process_intrusion_history=None
+process_breath_detection=None
+process_breath_plot=None
 
 def get_args():
     parser = argparse.ArgumentParser(description="Read CSI data from serial port")
     parser.add_argument('--port', dest='port', type=str, default="COM6",
                         help="Serial port number of csv_recv device")
+    parser.add_argument('--cache_len', dest='cache_len', type=int, default=100,
+                        help="Cache size")
 
     #database
-    parser.add_argument("--store_database", action="store_true",default=False)
+    parser.add_argument("--store_database", action="store_true",default=False,
+                        help="Whether to store data in MySQL")
     parser.add_argument('--host', dest='host', type=str, default="10.20.14.42",
                         help="Host of MySQL")
     parser.add_argument('--user', dest='user', type=str, default='zhaozijian',
@@ -34,9 +40,6 @@ def get_args():
                         help="Which database to use")
     parser.add_argument('--charset', dest='charset', type=str, default='utf8')
 
-    # Common
-    parser.add_argument('--cache_len', dest='cache_len', type=int, default=100,
-                        help="Cache size")
 
     # Intrusion
     parser.add_argument('--chosen_subcarrier', dest='chosen_subcarrier', type=int, default=-1,
@@ -82,7 +85,7 @@ def gesture_classification():
 
 
 def intrusion_detection():
-    global process_intrusion_detection,process_intrusion_plot
+    global process_intrusion_detection, process_intrusion_plot
     if process_intrusion_detection is None:
         process_intrusion_detection = multiprocessing.Process(target=intrusion_detection_func, args=(lock, detection_lock, csi_amplitude_array, csi_shape, detection_data_array, threshold ,start_len ,detection_gap ,alarm_interval, chosen_subcarrier, method, cache_len))
         process_intrusion_detection.start()
@@ -106,13 +109,24 @@ def intrusion_history():
 def trajectory():
     messagebox.showinfo("提示", "待开发模块功能正在开发中")
 
-def future_module():
-    messagebox.showinfo("提示", "待开发模块功能正在开发中")
-
 def breath_detection():
-    messagebox.showinfo("提示", "待开发模块功能正在开发中")
+    global process_breath_detection, process_breath_plot
+    if process_breath_detection is None:
+        process_breath_detection = multiprocessing.Process(target=breath_detection_func, args=(
+        lock, breath_lock, csi_amplitude_array, csi_phase_array,csi_shape,breath_detection_data_array,cache_len))
+        process_breath_detection.start()
+        process_breath_plot = multiprocessing.Process(target=breath_plot, args=(lock, breath_detection_data_array, cache_len))
+        process_breath_plot.start()
+    else:
+        process_breath_detection.kill()
+        process_breath_plot.kill()
+        process_breath_detection = None
+        process_breath_plot = None
 
 def fall_detection():
+    messagebox.showinfo("提示", "待开发模块功能正在开发中")
+
+def future_module():
     messagebox.showinfo("提示", "待开发模块功能正在开发中")
 
 
@@ -121,6 +135,8 @@ if __name__ == '__main__':
     lock = multiprocessing.Lock() # CSI锁
     detection_lock = multiprocessing.Lock() # 入侵检测中间结果锁
     gesture_lock = multiprocessing.Lock() # 手势识别结果锁
+    breath_lock = multiprocessing.Lock() # 呼吸检测结果锁
+
 
     # Common
     args = get_args()
@@ -150,6 +166,10 @@ if __name__ == '__main__':
     action_matrix = np.frombuffer(action_array, dtype=np.float32).reshape(action_class)
     people_array = multiprocessing.RawArray('f', np.zeros(people_class, dtype=np.float32).ravel())  # 人员分类结果
     people_matrix = np.frombuffer(people_array, dtype=np.float32).reshape(people_class)
+
+    # Breath
+    breath_detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 呼吸检测结果
+    breath_detection_data_array = np.frombuffer(breath_detection_data_array, dtype=np.float32).reshape(cache_len)
 
     # Start Read CSI
     process_get_csi = multiprocessing.Process(target=get_csi, args=(args.port, csi_amplitude_array, csi_phase_array, csi_shape, lock, args.host, args.user, args.passwd, args.db, args.charset, chosen_subcarrier, cache_len, args.store_database))
