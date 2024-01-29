@@ -115,7 +115,7 @@ def breath_detection():
         process_breath_detection = multiprocessing.Process(target=breath_detection_func, args=(
         lock, breath_lock, csi_amplitude_array, csi_phase_array,csi_shape,breath_detection_data_array,cache_len))
         process_breath_detection.start()
-        process_breath_plot = multiprocessing.Process(target=breath_plot, args=(lock, breath_detection_data_array, cache_len))
+        process_breath_plot = multiprocessing.Process(target=breath_plot, args=(breath_lock, breath_detection_data_array, cache_len))
         process_breath_plot.start()
     else:
         process_breath_detection.kill()
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     # Breath
     breath_detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 呼吸检测结果
-    breath_detection_data_array = np.frombuffer(breath_detection_data_array, dtype=np.float32).reshape(cache_len)
+    breath_detection_data_matrix = np.frombuffer(breath_detection_data_array, dtype=np.float32).reshape(cache_len)
 
     # Start Read CSI
     process_get_csi = multiprocessing.Process(target=get_csi, args=(args.port, csi_amplitude_array, csi_phase_array, csi_shape, lock, args.host, args.user, args.passwd, args.db, args.charset, chosen_subcarrier, cache_len, args.store_database))

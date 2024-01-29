@@ -111,3 +111,5 @@ def get_csi(serial_port, csi_amplitude_array, csi_phase_array, csi_shape, lock, 
 
             csi_phase_matrix[:-1] = csi_phase_matrix[1:]
             csi_phase_matrix[-1] = np.angle(csi_data_array,deg=True)
+
+            # print(csi_phase_matrix)
