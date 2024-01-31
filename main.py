@@ -10,6 +10,7 @@ from show_csi import show_csi_func
 from intrusion_detection import intrusion_detection_func,intrusion_history_func,intrusion_plot
 from gesture_recognition import gesture_recognition,gesture_recognition_plot
 from breath_detection import breath_detection_func,breath_plot
+from fall_detection import fall_detection_func,fall_plot
 
 process_show_csi=None
 process_gesture_classification=None
@@ -19,6 +20,8 @@ process_intrusion_plot=None
 process_intrusion_history=None
 process_breath_detection=None
 process_breath_plot=None
+process_fall_intrusion_detection=None
+process_fall_intrusion_plot=None
 
 def get_args():
     parser = argparse.ArgumentParser(description="Read CSI data from serial port")
@@ -124,8 +127,23 @@ def breath_detection():
         process_breath_plot = None
 
 def fall_detection():
-    messagebox.showinfo("提示", "待开发模块功能正在开发中")
-
+    global process_fall_intrusion_detection, process_fall_intrusion_plot
+    fall_method=2
+    fall_threshold=None
+    if process_fall_intrusion_detection is None:
+        process_fall_intrusion_detection = multiprocessing.Process(target=fall_detection_func, args=(
+        lock, fall_detection_lock, csi_amplitude_array, csi_shape, fall_detection_data_array, fall_threshold, start_len, detection_gap,
+        alarm_interval, chosen_subcarrier, fall_method, cache_len))
+        process_fall_intrusion_detection.start()
+        process_fall_intrusion_plot = multiprocessing.Process(target=fall_plot, args=(
+        fall_detection_lock, fall_detection_data_array, fall_threshold, fall_method, cache_len, args.host, args.user, args.passwd, args.db,
+        args.charset, args.store_database))
+        process_fall_intrusion_plot.start()
+    else:
+        process_fall_intrusion_detection.kill()
+        process_fall_intrusion_plot.kill()
+        process_fall_intrusion_detection = None
+        process_fall_intrusion_plot = None
 def future_module():
     messagebox.showinfo("提示", "待开发模块功能正在开发中")
 
@@ -136,6 +154,7 @@ if __name__ == '__main__':
     detection_lock = multiprocessing.Lock() # 入侵检测中间结果锁
     gesture_lock = multiprocessing.Lock() # 手势识别结果锁
     breath_lock = multiprocessing.Lock() # 呼吸检测结果锁
+    fall_detection_lock = multiprocessing.Lock() # 跌倒检测中间结果锁
 
 
     # Common
@@ -157,6 +176,12 @@ if __name__ == '__main__':
     threshold = multiprocessing.Value('f', threshold)  # 入侵检测阈值
     detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 入侵检测中间结果
     detection_data_matrix = np.frombuffer(detection_data_array, dtype=np.float32).reshape(cache_len)
+
+    # Fall
+    fall_threshold = args.threshold if args.threshold is not None else -1
+    fall_threshold = multiprocessing.Value('f', fall_threshold)  # 跌倒检测阈值
+    fall_detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 跌倒检测中间结果
+    fall_detection_data_matrix = np.frombuffer(fall_detection_data_array, dtype=np.float32).reshape(cache_len)
 
     # Gesture
     model_path=args.model_path # 手势识别模型路径
