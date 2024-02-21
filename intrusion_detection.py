@@ -142,9 +142,9 @@ def intrusion_history_func(host="10.20.14.42", user="zhaozijian", passwd="9213@f
 
 def intrusion_plot(lock,detection_data_array,threshold,method=1,cache_len=100, host="10.20.14.42", user="zhaozijian", passwd="9213@fCOW", db="wave_data", charset="utf8",store_database=False):
     store=store_database
-
-    conn = pymysql.connect(host=host, user=user, passwd=passwd, db=db, charset=charset)
-    cursor = conn.cursor()
+    if store:
+        conn = pymysql.connect(host=host, user=user, passwd=passwd, db=db, charset=charset)
+        cursor = conn.cursor()
 
     fig, ax = plt.subplots()
     fig.patch.set_facecolor('green')
