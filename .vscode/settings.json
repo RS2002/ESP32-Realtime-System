@@ -3,5 +3,10 @@
         "activityBar.background": "#4E1F17",
         "titleBar.activeBackground": "#6D2B20",
         "titleBar.activeForeground": "#FDF9F8"
-    }
+    },
+    "idf.portWin": "COM7",
+    "idf.adapterTargetName": "esp32s3",
+    "idf.openOcdConfigs": [
+        "board/esp32s3-builtin.cfg"
+    ]
 }

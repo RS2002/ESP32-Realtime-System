@@ -61,43 +61,6 @@ def show_csi_heatmap_func(lock, csi_amplitude_array, cache_len, csi_shape):
     plt.show()
 
 
-# def show_csi_complex_func(lock, csi_amplitude_array, csi_phase_array, cache_len, csi_shape):
-#     # 构造复数CSI
-#     csi_amplitude_matrix = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
-#     csi_phase_matrix = np.frombuffer(csi_phase_array, dtype=np.float32).reshape(csi_shape)
-#     complex_csi_matrix = csi_amplitude_matrix * np.exp(1j * csi_phase_matrix)
-    
-#     fig, ax = plt.subplots()
-#     plt.title('CSI Complex Plane for All Subcarriers')
-#     plt.xlabel('Real Part')
-#     plt.ylabel('Imaginary Part')
-    
-#     # 使用一个散点图展示所有载波的复数CSI
-#     # 因为每个时间点上的数据都会变化，所以初始化时可以仅设置样式
-#     scatter = ax.scatter(complex_csi_matrix[:, 0].real, complex_csi_matrix[:, 0].imag, s=10)
-    
-#     def animate(i):
-#         with lock:
-#             # 更新复数CSI数据
-#             csi_amplitude_matrix = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
-#             csi_phase_matrix = np.frombuffer(csi_phase_array, dtype=np.float32).reshape(csi_shape)
-#             complex_csi_matrix = csi_amplitude_matrix * np.exp(1j * csi_phase_matrix)
-#             # 归一化复数CSI矩阵
-#             max_val = np.max(np.abs(complex_csi_matrix))
-#             normalized_csi_matrix = complex_csi_matrix / max_val
-
-#             # 更新所有载波的散点图数据
-#             scatter.set_offsets(np.column_stack((normalized_csi_matrix[:, :].real.flatten(), normalized_csi_matrix[:, :].imag.flatten())))
-        
-#         return scatter,
-    
-#     ani = animation.FuncAnimation(fig, animate, interval=100, blit=False, cache_frame_data=False)
-
-
-#     plt.xlim(-1, 1)  # 根据数据调整
-#     plt.ylim(-1, 1)  # 根据数据调整
-#     plt.grid(True)
-#     plt.show()
 
 
 def show_csi_complex_func(lock, csi_amplitude_array, csi_phase_array, cache_len, csi_shape):
@@ -170,58 +133,149 @@ def show_csi_complex_func(lock, csi_amplitude_array, csi_phase_array, cache_len,
     
 #     plt.show()
     
-def show_csi_STFT_func(lock, csi_amplitude_array, cache_len, csi_shape, fs=100, update_interval=100):
-    """
-    Display STFT heatmap of CSI data considering cache_len for latest data.
+# def show_csi_STFT_func(lock, csi_amplitude_array, cache_len, csi_shape, fs=100, update_interval=20):
+#     """
+#     Display STFT heatmap of CSI data considering cache_len for latest data.
     
-    Parameters:
-    - lock: A threading or multiprocessing lock to ensure data consistency.
-    - csi_amplitude_array: Shared memory array containing CSI amplitude data.
-    - cache_len: Length of the data cache to consider for STFT.
-    - csi_shape: Shape of the CSI data (time, subcarriers).
-    - fs: Sampling frequency of the CSI data.
-    """
-    # Ensure the lock is acquired to maintain data consistency
+#     Parameters:
+#     - lock: A threading or multiprocessing lock to ensure data consistency.
+#     - csi_amplitude_array: Shared memory array containing CSI amplitude data.
+#     - cache_len: Length of the data cache to consider for STFT.
+#     - csi_shape: Shape of the CSI data (time, subcarriers).
+#     - fs: Sampling frequency of the CSI data.
+#     """
+#     # Ensure the lock is acquired to maintain data consistency
+#     with lock:
+#         # Reshape CSI data
+#         csi_arr = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
+        
+#     # Initialize plot
+#     fig, ax = plt.subplots()
+#     plt.title('Dynamic STFT Magnitude Heatmap')
+#     plt.xlabel('Time [sec]')
+#     plt.ylabel('Frequency [Hz]')
+    
+#     # Placeholder for the heatmap
+#     stft_heatmap = ax.imshow(np.zeros((csi_shape[1]//2+1, cache_len)), aspect='auto', origin='lower', 
+#                              interpolation='none', cmap='viridis')
+#     fig.colorbar(stft_heatmap, ax=ax, orientation='vertical', label='Magnitude')
+
+#     def update_heatmap(frame):
+#         with lock:
+#             # Determine the starting point to consider cache_len of latest data
+#             # start_point = max(0, csi_arr.shape[0] - cache_len)
+#             # latest_data = csi_arr[start_point:, 5]  # Assuming analysis on the first subcarrier
+#             # 计算每个子载波时间序列的平均值，并从时间序列中减去
+#             # csi_arr_dc_removed = csi_arr - np.mean(csi_arr, axis=0)
+
+#             # 接下来你可以对去除直流分量后的数据执行STFT
+#             # 选择某个子载波的数据进行STFT
+#             subcarrier_index = 10  # 示例子载波索引
+#             # latest_data = csi_arr[:, subcarrier_index]
+
+#             # Compute STFT on the latest data
+#             f, t, Zxx = stft(latest_data, fs, nperseg=30, noverlap=28)
+#             magnitude = np.abs(Zxx)
+#             # noise_threshold = 0.4
+#             # magnitude = np.where(magnitude > noise_threshold, magnitude, 0)
+#             # Update heatmap data
+#             stft_heatmap.set_data(magnitude)
+#             stft_heatmap.set_extent([t.min(), t.max(), f.min(), f.max()])
+#             stft_heatmap.set_clim(vmin=0, vmax=5)
+        
+#         return stft_heatmap,
+    
+#     # Create an animation that updates the heatmap
+#     ani = animation.FuncAnimation(fig, update_heatmap, interval=update_interval, blit=False, cache_frame_data=False)
+    
+#     plt.show()
+
+def show_csi_STFT_func(lock, csi_amplitude_array, cache_len, csi_shape, fs=100, update_interval=100):
     with lock:
         # Reshape CSI data
         csi_arr = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
         
-    # Initialize plot
-    fig, ax = plt.subplots()
-    plt.title('Dynamic STFT Magnitude Heatmap')
-    plt.xlabel('Time [sec]')
-    plt.ylabel('Frequency [Hz]')
-    
-    # Placeholder for the heatmap
-    stft_heatmap = ax.imshow(np.zeros((csi_shape[1]//2+1, cache_len)), aspect='auto', origin='lower', 
-                             interpolation='none', cmap='viridis')
-    fig.colorbar(stft_heatmap, ax=ax, orientation='vertical', label='Magnitude')
+    # 初始化图表和轴
+    fig, ax1 = plt.subplots()#2, 1, figsize=(10, 8))
+    plt.subplots_adjust(bottom=0.3, hspace=0.35)
 
-    def update_heatmap(frame):
+    # STFT热图轴
+    stft_heatmap = ax1.imshow(np.zeros((csi_shape[1]//2 + 1, 100)), aspect='auto', origin='lower', cmap='viridis')
+    fig.colorbar(stft_heatmap, ax=ax1, orientation='vertical', label='Magnitude')
+    ax1.set_title('STFT Magnitude Heatmap')
+    ax1.set_xlabel('Time [sec]')
+    ax1.set_ylabel('Frequency [Hz]')
+
+
+    def update(frame):
         with lock:
-            # Determine the starting point to consider cache_len of latest data
-            start_point = max(0, csi_arr.shape[0] - cache_len)
-            # latest_data = csi_arr[start_point:, 5]  # Assuming analysis on the first subcarrier
-            # 计算每个子载波时间序列的平均值，并从时间序列中减去
-            csi_arr_dc_removed = csi_arr - np.mean(csi_arr, axis=0)
 
-            # 接下来你可以对去除直流分量后的数据执行STFT
-            # 选择某个子载波的数据进行STFT
-            subcarrier_index = 5  # 示例子载波索引
-            latest_data = csi_arr_dc_removed[:, subcarrier_index]
+            # 假设csi_amplitude_array是全局变量或以其他方式访问
+            # 计算STFT
+            # csi_arr_dc_removed = csi_arr - np.mean(csi_arr, axis=0)
 
+            subcarrier_index = 12  # 示例子载波索引
+            latest_data = csi_arr[:, subcarrier_index]
+            latest_data =latest_data - np.mean(latest_data, axis=0)
             # Compute STFT on the latest data
-            f, t, Zxx = stft(latest_data, fs, nperseg=30, noverlap=28)
+            f, t, Zxx = stft(latest_data, fs, nperseg=70, noverlap = 69, window = 'hann')
             magnitude = np.abs(Zxx)
-            
+            # noise_threshold = 0.4
+            # magnitude = np.where(magnitude > noise_threshold, magnitude, 0)
             # Update heatmap data
             stft_heatmap.set_data(magnitude)
             stft_heatmap.set_extent([t.min(), t.max(), f.min(), f.max()])
-            stft_heatmap.set_clim(vmin=0, vmax=2)
-        
-        return stft_heatmap,
-    
-    # Create an animation that updates the heatmap
-    ani = animation.FuncAnimation(fig, update_heatmap, interval=update_interval, blit=False)
-    
+            stft_heatmap.set_clim(vmin=0, vmax=5)
+
+        return stft_heatmap#, high_freq_line, low_freq_line
+
+    ani = animation.FuncAnimation(fig, update, frames=np.arange(100), interval=update_interval, blit=False)
+
     plt.show()
+# def show_csi_STFT_func(lock, csi_amplitude_array, cache_len, csi_shape, fs=100, update_interval=200):
+#     with lock:
+#         # Reshape CSI data
+#         csi_arr = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
+        
+#     # 初始化图表和轴
+#     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+#     plt.subplots_adjust(bottom=0.3, hspace=0.35)
+
+#     # STFT热图轴设置
+#     stft_heatmap = ax1.imshow(np.zeros((csi_shape[1]//2 + 1, cache_len)), aspect='auto', origin='lower', cmap='viridis')
+#     fig.colorbar(stft_heatmap, ax=ax1, orientation='vertical', label='Magnitude')
+#     ax1.set_title('STFT Magnitude Heatmap')
+#     ax1.set_xlabel('Time [sec]')
+#     ax1.set_ylabel('Frequency [Hz]')
+
+#     # 频率平均值曲线轴设置
+#     ax2.set_title('Frequency Averages Over Time')
+#     ax2.set_xlabel('Time (s)')
+#     ax2.set_ylabel('Magnitude Average')
+#     high_freq_line, = ax2.plot([], [], label='High Frequency Avg', color='blue')
+#     low_freq_line, = ax2.plot([], [], label='Low Frequency Avg', color='red')
+#     ax2.legend()
+
+#     timestamps = []
+#     high_freq_averages = []
+#     low_freq_averages = []
+
+#     def update(frame):
+#         nonlocal timestamps, high_freq_averages, low_freq_averages
+#         with lock:
+#             # 计算STFT
+#             subcarrier_index = 5  # 示例子载波索引
+#             latest_data = csi_arr[:, subcarrier_index] - np.mean(csi_arr[:, subcarrier_index])
+#             f, t, Zxx = stft(latest_data, fs, nperseg=60, noverlap=58)
+#             magnitude = np.abs(Zxx)
+#             magnitude = np.where(magnitude > 0.4, magnitude, 0)  # 应用噪声阈值
+
+#             # 更新STFT热图
+#             stft_heatmap.set_data(magnitude)
+#             stft_heatmap.set_extent([0, magnitude.shape[1], 0, magnitude.shape[0]])
+
+#         return stft_heatmap, high_freq_line, low_freq_line
+
+#     ani = animation.FuncAnimation(fig, update, frames=np.arange(100), interval=update_interval, blit=False)
+
+#     plt.show()

@@ -11,7 +11,8 @@ from intrusion_detection import intrusion_detection_func,intrusion_history_func,
 from gesture_recognition import gesture_recognition,gesture_recognition_plot
 from breath_detection import breath_detection_func,breath_plot
 from fall_detection import fall_detection_func,fall_plot
-
+from fall_detection_data_driven import fall_recognition,fall_recognition_plot
+import ctypes
 process_show_csi=None
 process_gesture_classification=None
 process_gesture_plot=None
@@ -22,7 +23,8 @@ process_breath_detection=None
 process_breath_plot=None
 process_fall_intrusion_detection=None
 process_fall_intrusion_plot=None
-
+process_fall_classification=None
+process_fall_plot=None
 def get_args():
     parser = argparse.ArgumentParser(description="Read CSI data from serial port")
     parser.add_argument('--port', dest='port', type=str, default="COM7",
@@ -57,8 +59,8 @@ def get_args():
     parser.add_argument('--alarm_interval', dest='alarm_interval', type=int, default=300)
 
     # Gesture
-    parser.add_argument('--model_path', dest='model_path', type=str, default='./model',help="Gesture Classification Model Path")
-    parser.add_argument('--action_class', dest='action_class', type=int, default=6,help="Action class num")
+    parser.add_argument('--model_path', dest='model_path', type=str, default='F:\SRIBD\ESP32-Realtime-System\model_weights\model_20240228_115844.pth',help="Gesture Classification Model Path")
+    parser.add_argument('--action_class', dest='action_class', type=int, default=3,help="Action class num")
     parser.add_argument('--people_class', dest='people_class', type=int, default=8,help="People class num")
 
     args = parser.parse_args()
@@ -108,6 +110,20 @@ def show_csi_STFT():
     else:
         process_show_csi.kill()
         process_show_csi=None
+
+def fall_classification():
+    global process_fall_classification,process_fall_plot
+    if process_fall_classification is None:
+        process_fall_classification=multiprocessing.Process(target=fall_recognition, args=(lock, csi_amplitude_array, csi_shape, gesture_lock, action_array, model_path, action_class))
+        process_fall_classification.start()
+        process_fall_plot=multiprocessing.Process(target=fall_recognition_plot, args=(action_array, action_class))
+        process_fall_plot.start()
+    else:
+        process_fall_classification.kill()
+        process_fall_plot.kill()
+        process_fall_classification=None
+        process_fall_plot=None
+
 
 def gesture_classification():
     global process_gesture_classification,process_gesture_plot
@@ -180,11 +196,15 @@ def breath_detection():
 #         process_fall_intrusion_plot = None
 def fall_detection():
     global process_fall_intrusion_detection, process_fall_intrusion_plot
+    # 创建共享阈值
+    threshold1 = multiprocessing.Value(ctypes.c_double, 5.0)  # 初始值为 5
+    threshold2 = multiprocessing.Value(ctypes.c_double, 1.0)  # 初始值为 1
+
     if process_fall_intrusion_detection is None:
-        process_fall_intrusion_detection = multiprocessing.Process(target=fall_detection_func, args=(lock, fall_detection_lock, csi_amplitude_array, csi_shape, fall_detection_data_array))
+        process_fall_intrusion_detection = multiprocessing.Process(target=fall_detection_func, args=(lock, fall_detection_lock, csi_amplitude_array, csi_shape, fall_detection_data_array, threshold1, threshold2))
         process_fall_intrusion_detection.start()
 
-        process_fall_intrusion_plot = multiprocessing.Process(target=fall_plot, args=(fall_detection_lock, fall_detection_data_array, cache_len))
+        process_fall_intrusion_plot = multiprocessing.Process(target=fall_plot, args=(fall_detection_lock, fall_detection_data_array, cache_len, threshold1, threshold2))
         process_fall_intrusion_plot.start()
     else:
         process_fall_intrusion_detection.terminate()
@@ -237,15 +257,20 @@ if __name__ == '__main__':
     fall_detection_data_array = multiprocessing.RawArray('f', cache_len * 2)  # 正确的属性名
     fall_detection_data_matrix = np.frombuffer(fall_detection_data_array, dtype=np.float32).reshape((cache_len, 2))
 
-
     # Gesture
     model_path=args.model_path # 手势识别模型路径
     action_class=args.action_class # 手势数目
-    people_class=args.people_class # 人员数目
     action_array = multiprocessing.RawArray('f', np.zeros(action_class, dtype=np.float32).ravel())  # 动作分类结果
     action_matrix = np.frombuffer(action_array, dtype=np.float32).reshape(action_class)
-    people_array = multiprocessing.RawArray('f', np.zeros(people_class, dtype=np.float32).ravel())  # 人员分类结果
-    people_matrix = np.frombuffer(people_array, dtype=np.float32).reshape(people_class)
+
+    # Gesture
+    # model_path=args.model_path # 手势识别模型路径
+    # action_class=args.action_class # 手势数目
+    # people_class=args.people_class # 人员数目
+    # action_array = multiprocessing.RawArray('f', np.zeros(action_class, dtype=np.float32).ravel())  # 动作分类结果
+    # action_matrix = np.frombuffer(action_array, dtype=np.float32).reshape(action_class)
+    # people_array = multiprocessing.RawArray('f', np.zeros(people_class, dtype=np.float32).ravel())  # 人员分类结果
+    # people_matrix = np.frombuffer(people_array, dtype=np.float32).reshape(people_class)
 
     # Breath
     breath_detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 呼吸检测结果
@@ -317,6 +342,9 @@ if __name__ == '__main__':
 
     btn_show_csi_STFT = tk.Button(button_frame, text="显示CSI STFT", command=show_csi_STFT, font=("Helvetica", 12))
     btn_show_csi_STFT.grid(row=5, column=1, padx=10, pady=10)
+
+    btn_fall_detection2 = tk.Button(button_frame, text="跌倒检测数据驱动", command=fall_classification, font=("Helvetica", 12))
+    btn_fall_detection2.grid(row=6, column=0, padx=10, pady=10)
     # 运行主循环
     root.mainloop()
 
