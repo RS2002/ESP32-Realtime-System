@@ -3,16 +3,19 @@ from tkinter import messagebox
 from tkinter.font import Font
 import argparse
 import multiprocessing
-import numpy as np
+# import numpy as np
 from Constant import *
 from get_csi import *
 from show_csi import *
 from intrusion_detection import intrusion_detection_func,intrusion_history_func,intrusion_plot
-from gesture_recognition import gesture_recognition,gesture_recognition_plot
+# from gesture_recognition import gesture_recognition,gesture_recognition_plot
 from breath_detection import breath_detection_func,breath_plot
 from fall_detection import fall_detection_func,fall_plot
 from fall_detection_data_driven import fall_recognition,fall_recognition_plot
+from LoFi import LoFi
 import ctypes
+import ast
+
 process_show_csi=None
 process_gesture_classification=None
 process_gesture_plot=None
@@ -25,6 +28,22 @@ process_fall_intrusion_detection=None
 process_fall_intrusion_plot=None
 process_fall_classification=None
 process_fall_plot=None
+process_lofi=None
+
+def parse_2d_float_array(arg):
+    try:
+        # 使用 ast.literal_eval 安全地解析字符串为 Python 对象
+        array = ast.literal_eval(arg)
+        # 确保它是一个二维数组，并且所有元素都是浮点数
+        if (isinstance(array, list) and all(isinstance(row, list) for row in array) and
+            all(isinstance(elem, float) for row in array for elem in row)):
+            return array
+        else:
+            raise ValueError
+    except:
+        raise argparse.ArgumentTypeError("Argument must be a 2D array of floats in the format '[[1.0, 2.0], [3.0, 4.0]]'")
+
+
 def get_args():
     parser = argparse.ArgumentParser(description="Read CSI data from serial port")
     parser.add_argument('--port', dest='port', type=str, default="COM7",
@@ -62,6 +81,12 @@ def get_args():
     parser.add_argument('--model_path', dest='model_path', type=str, default='F:\SRIBD\ESP32-Realtime-System\model_weights\model_20240228_115844.pth',help="Gesture Classification Model Path")
     parser.add_argument('--action_class', dest='action_class', type=int, default=3,help="Action class num")
     parser.add_argument('--people_class', dest='people_class', type=int, default=8,help="People class num")
+
+    # LoFi
+    parser.add_argument('--cv_model_path', dest='cv_model_path', type=str, default='./yolo')
+    parser.add_argument('--src_points', dest='src_points', type=parse_2d_float_array, nargs='+', default=[[0, 0], [1.80, 0], [0, 4.80], [1.80, 4.80]])
+    parser.add_argument('--dst_points', dest='dst_points', type=parse_2d_float_array, nargs='+', default=None)
+
 
     args = parser.parse_args()
     return args
@@ -125,18 +150,18 @@ def fall_classification():
         process_fall_plot=None
 
 
-def gesture_classification():
-    global process_gesture_classification,process_gesture_plot
-    if process_gesture_classification is None:
-        process_gesture_classification=multiprocessing.Process(target=gesture_recognition, args=(lock, csi_amplitude_array, csi_shape, gesture_lock, action_array, people_array, model_path, action_class, people_class))
-        process_gesture_classification.start()
-        process_gesture_plot=multiprocessing.Process(target=gesture_recognition_plot, args=(action_array, people_array, action_class, people_class))
-        process_gesture_plot.start()
-    else:
-        process_gesture_classification.kill()
-        process_gesture_plot.kill()
-        process_gesture_classification=None
-        process_gesture_plot=None
+# def gesture_classification():
+#     global process_gesture_classification,process_gesture_plot
+#     if process_gesture_classification is None:
+#         process_gesture_classification=multiprocessing.Process(target=gesture_recognition, args=(lock, csi_amplitude_array, csi_shape, gesture_lock, action_array, people_array, model_path, action_class, people_class))
+#         process_gesture_classification.start()
+#         process_gesture_plot=multiprocessing.Process(target=gesture_recognition_plot, args=(action_array, people_array, action_class, people_class))
+#         process_gesture_plot.start()
+#     else:
+#         process_gesture_classification.kill()
+#         process_gesture_plot.kill()
+#         process_gesture_classification=None
+#         process_gesture_plot=None
 
 
 def intrusion_detection():
@@ -217,6 +242,14 @@ def fall_detection():
 def future_module():
     messagebox.showinfo("提示", "待开发模块功能正在开发中")
 
+def lofi():
+    global process_lofi
+    if process_lofi is None:
+        process_lofi = multiprocessing.Process(target=LoFi, args=(src_points, dst_points, cv_model_path))
+        process_lofi.start()
+    else:
+        process_lofi.kill()
+        process_lofi = None
 
 if __name__ == '__main__':
     # 多进程部分
@@ -276,12 +309,15 @@ if __name__ == '__main__':
     breath_detection_data_array = multiprocessing.RawArray('f', np.zeros(cache_len, dtype=np.float32).ravel())  # 呼吸检测结果
     breath_detection_data_matrix = np.frombuffer(breath_detection_data_array, dtype=np.float32).reshape(cache_len)
 
+    # LoFi
+    src_points, dst_points, cv_model_path = np.array(args.src_points,dtype="float32"), args.dst_points, args.cv_model_path
+    if dst_points is not None:
+        dst_points = np.array(args.dst_points,dtype="float32")
+
+
     # Start Read CSI
     process_get_csi = multiprocessing.Process(target=get_csi, args=(args.port, csi_amplitude_array, csi_phase_array, csi_shape, lock, args.host, args.user, args.passwd, args.db, args.charset, chosen_subcarrier, cache_len, args.store_database))
     process_get_csi.start()
-
-
-
 
 
     # UI部分
@@ -306,45 +342,49 @@ if __name__ == '__main__':
     button_frame.pack()
 
     # 创建显示CSI按钮，绑定对应的函数
-    btn_show_csi = tk.Button(button_frame, text="显示CSI幅度", command=show_csi, font=("Helvetica", 12))
+    btn_show_csi = tk.Button(button_frame, text="CSI幅度", command=show_csi, font=("Helvetica", 12))
     btn_show_csi.grid(row=1, column=0, padx=10, pady=10)
 
     # 创建其它按钮，绑定对应的函数
     # btn_locate_track = tk.Button(button_frame, text="手势识别", command=gesture_classification, font=("Helvetica", 12))
     # btn_locate_track.grid(row=1, column=1, padx=10, pady=10)
 
-    btn_locate_track = tk.Button(button_frame, text="呼吸检测", command=breath_detection, font=("Helvetica", 12))
-    btn_locate_track.grid(row=1, column=1, padx=10, pady=10)
+    btn_show_csi_heatmap = tk.Button(button_frame, text="CSI幅度热图", command=show_csi_heatmap, font=("Helvetica", 12))
+    btn_show_csi_heatmap.grid(row=1, column=1, padx=10, pady=10)
+
+    btn_show_csi_phase_heatmap = tk.Button(button_frame, text="CSI相位热图", command=show_csi_phase_heatmap, font=("Helvetica", 12))
+    btn_show_csi_phase_heatmap.grid(row=2, column=0, padx=10, pady=10)
+
+    btn_show_csi_complex = tk.Button(button_frame, text="CSI复平面", command=show_csi_complex, font=("Helvetica", 12))
+    btn_show_csi_complex.grid(row=2, column=1, padx=10, pady=10)
+
+    btn_show_csi_STFT = tk.Button(button_frame, text="CSI STFT", command=show_csi_STFT, font=("Helvetica", 12))
+    btn_show_csi_STFT.grid(row=3, column=0, padx=10, pady=10)
+
+    btn_future_module = tk.Button(button_frame, text="轨迹跟踪", command=trajectory, font=("Helvetica", 12))
+    btn_future_module.grid(row=3, column=1, padx=10, pady=10)
 
     btn_intrusion_detection = tk.Button(button_frame, text="入侵检测", command=intrusion_detection, font=("Helvetica", 12))
-    btn_intrusion_detection.grid(row=2, column=0, padx=10, pady=10)
+    btn_intrusion_detection.grid(row=4, column=0, padx=10, pady=10)
 
     # btn_future_module = tk.Button(button_frame, text="入侵检测历史分析", command=intrusion_history, font=("Helvetica", 12))
     # btn_future_module.grid(row=2, column=1, padx=10, pady=10)
 
+    btn_locate_track = tk.Button(button_frame, text="呼吸检测", command=breath_detection, font=("Helvetica", 12))
+    btn_locate_track.grid(row=4, column=1, padx=10, pady=10)
+
     btn_future_module = tk.Button(button_frame, text="跌倒检测", command=fall_detection, font=("Helvetica", 12))
-    btn_future_module.grid(row=2, column=1, padx=10, pady=10)
-
-    btn_future_module = tk.Button(button_frame, text="轨迹跟踪", command=trajectory, font=("Helvetica", 12))
-    btn_future_module.grid(row=3, column=0, padx=10, pady=10)
-
-    btn_future_module = tk.Button(button_frame, text="待开发模块", command=future_module, font=("Helvetica", 12))
-    btn_future_module.grid(row=3, column=1, padx=10, pady=10)
-
-    btn_show_csi_heatmap = tk.Button(button_frame, text="显示CSI幅度热图", command=show_csi_heatmap, font=("Helvetica", 12))
-    btn_show_csi_heatmap.grid(row=4, column=0, padx=10, pady=10)
-
-    btn_show_csi_phase_heatmap = tk.Button(button_frame, text="显示CSI相位热图", command=show_csi_phase_heatmap, font=("Helvetica", 12))
-    btn_show_csi_phase_heatmap.grid(row=4, column=1, padx=10, pady=10)
-
-    btn_show_csi_complex = tk.Button(button_frame, text="显示CSI复平面", command=show_csi_complex, font=("Helvetica", 12))
-    btn_show_csi_complex.grid(row=5, column=0, padx=10, pady=10)
-
-    btn_show_csi_STFT = tk.Button(button_frame, text="显示CSI STFT", command=show_csi_STFT, font=("Helvetica", 12))
-    btn_show_csi_STFT.grid(row=5, column=1, padx=10, pady=10)
+    btn_future_module.grid(row=5, column=0, padx=10, pady=10)
 
     btn_fall_detection2 = tk.Button(button_frame, text="跌倒检测数据驱动", command=fall_classification, font=("Helvetica", 12))
-    btn_fall_detection2.grid(row=6, column=0, padx=10, pady=10)
+    btn_fall_detection2.grid(row=5, column=1, padx=10, pady=10)
+
+    btn_future_module = tk.Button(button_frame, text="LoFi", command=lofi, font=("Helvetica", 12))
+    btn_future_module.grid(row=6, column=0, padx=10, pady=10)
+
+    btn_future_module = tk.Button(button_frame, text="待开发模块", command=future_module, font=("Helvetica", 12))
+    btn_future_module.grid(row=6, column=1, padx=10, pady=10)
+
     # 运行主循环
     root.mainloop()
 

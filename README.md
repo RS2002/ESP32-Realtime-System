@@ -1,6 +1,4 @@
-# ESP32-Realtime-System 开发说明
-
-
+# ESP32-Realtime-System
 
 **开发者：** 赵子健、陈廷尉、孟繁一、蔡智捷 
 
@@ -8,7 +6,7 @@
 
 
 
-## 使用说明
+## 1. 简介
 
 首先向ESP32中烧入[esp-csi/examples/get-started/csi_recv_router at master · espressif/esp-csi (github.com)](https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router)，并连接至router
 
@@ -28,64 +26,100 @@ python main.py --help
 
 
 
-**各模块使用说明：TODO**
+**注意：**点击各模块按钮后程序开始运行，若要停止程序请再次点击对应按钮，**不要直接关闭界面！不要直接关闭界面！不要直接关闭界面！**
+
+
+
+## 2. 使用说明
+
+### CSI显示模块
+
+可显示内容包括：CSI幅度、相位、频谱
+
+
+
+### LoFi：基于2D图像的Wi-Fi定位标签生成器
+
+请在提供参数 ``src_points``:四个不共线锚点在物理世界的坐标（任意单位均可）；``cv_model_path``存储目标检测模型的路径，目前默认路径使用YOLOv3，也可以更换为其他模型；``dst_points``为四个锚点在像素空间的坐标，可以选择性题提供（若不提供，则可以直接在图片中依次点击四个锚点，程序会依次返回对应坐标并存储于dst_points）
+
+
+
+### 入侵检测
 
 
 
 
 
-## 开发说明
+###跌倒检测
 
-**待开发内容：** 呼吸检测、跌倒检测、轨迹跟踪
 
-**可使用的变量：** CSI幅度、相位
 
-**使用方法：**
 
-```python
-def func(csi_amplitude_array, csi_phase_array, csi_shape, lock): #可根据需要使用csi_amplitude_array和csi_phase_array
-    #首先将multiprocessing.RawArray转化为np.array，此步骤无需加锁
-    csi_amplitude_matrix = np.frombuffer(csi_amplitude_array, dtype=np.float32).reshape(csi_shape)
-    csi_phase_matrix = np.frombuffer(csi_phase_array, dtype=np.float32).reshape(csi_shape)
-    
-    # CSI不断更新，应该需要再while循环中不断读取
-    while True:
-        # 之后在读写CSI时需要加锁（这里没有区分读写锁，但各模块不应更改CSI矩阵中数据）
-        with lock:
-            读取csi_amplitude_matrix/csi_phase_matrix
+
+### 呼吸检测
+
+
+
+###手势识别/动作识别/人员识别/人数估计
+
+待更新
+
+
+
+### 轨迹跟踪
+
+开发中
+
+
+
+##3. 引用
+
+更新中
+
+**跌倒检测**
+
+```
+@article{chen2024deep,
+  title={Deep learning-based fall detection using commodity Wi-Fi},
+  author={Chen, Tingwei and Li, Xiaoyang and Li, Hang and Zhu, Guangxu},
+  journal={Journal of Information and Intelligence},
+  year={2024},
+  publisher={Elsevier}
+}
+```
+
+```
+@article{陈廷尉2023基于无线信道状态信息的跌倒检测,
+  title={基于无线信道状态信息的跌倒检测},
+  author={陈廷尉 and 李阳 and 韩凯峰 and 李晓阳 and 李航 and 朱光旭},
+  journal={信息通信技术与政策},
+  volume={49},
+  number={9},
+  pages={67},
+  year={2023}
+}
+```
+
+```
+@inproceedings{cai2023falldewideo,
+  title={FallDeWideo: Vision-Aided Wireless Sensing Dataset for Fall Detection with Commodity Wi-Fi Devices},
+  author={Cai, Zhijie and Chen, Tingwei and Zhou, Fujia and Cui, Yuanhao and Li, Hang and Li, Xiaoyang and Zhu, Guangxu and Shi, Qingjiang},
+  booktitle={Proceedings of the 3rd ACM MobiCom Workshop on Integrated Sensing and Communications Systems},
+  pages={7--12},
+  year={2023}
+}
 ```
 
 
 
-**可用变量说明：**
+**手势识别/动作识别/人员识别/人数估计**
 
-csi_shape：幅度和相位的shape，大小为“100\*52”，其中100是cache大小，52是载波数（cache大小可通过args修改）
-csi_amplitude_array、csi_phase_array：形状都为“100\*52”，更新逻辑如下（即最新的数据被添加在array末尾），其中phase是角度制（-180~180）
-
-```python
-# 更新cache
-with lock:
-    csi_amplitude_matrix[:-1] = csi_amplitude_matrix[1:]
-    csi_amplitude_matrix[-1] = np.abs(csi_data_array)
-
-    csi_phase_matrix[:-1] = csi_phase_matrix[1:]
-    csi_phase_matrix[-1] = np.angle(csi_data_array,deg=True)
 ```
-
-lock：csi_amplitude_array、csi_phase_array的读写锁
-
-
-
-**函数接入系统参考：**
-
-```python
-def show_csi():
-    global process_show_csi
-    if process_show_csi is None:
-        process_show_csi = multiprocessing.Process(target=show_csi_func, args=(lock,csi_amplitude_array,cache_len,csi_shape))
-        process_show_csi.start()
-    else:
-        process_show_csi.kill()
-        process_show_csi=None
+@article{zhao2024finding,
+  title={Finding the Missing Data: A BERT-inspired Approach Against Package Loss in Wireless Sensing},
+  author={Zhao, Zijian and Chen, Tingwei and Meng, Fanyi and Li, Hang and Li, Xiaoyang and Zhu, Guangxu},
+  journal={arXiv preprint arXiv:2403.12400},
+  year={2024}
+}
 ```
 
