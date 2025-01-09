@@ -1,16 +1,16 @@
 # ESP32-Realtime-System
 
-**开发者：** 赵子健、陈廷尉、孟繁一、蔡智捷 
+**Device:** ESP32-S3 (supports other ESP32 models)
 
-**设备：** ESP32-S3 （支持ESP32其他型号）
+![](./fig/main.png)
 
 
 
-## 1. 简介
+## 1. Introduction
 
-首先向ESP32中烧入[esp-csi/examples/get-started/csi_recv_router at master · espressif/esp-csi (github.com)](https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router)，并连接至router
+First, flash [esp-csi/examples/get-started/csi_recv_router at master · espressif/esp-csi (github.com)](https://github.com/espressif/esp-csi/tree/master/examples/get-started/csi_recv_router) onto the ESP32 and connect it to the router.
 
-之后通过如下命令使用系统
+Then, use the system with the following command:
 
 ```shell
 python main.py --port <port>
@@ -18,65 +18,47 @@ python main.py --port <port>
 
 ![](./fig/ui.png)
 
-更多参数可使用获取
+
+
+For more parameters, you can obtain help with:
 
 ```shell
 python main.py --help
 ```
 
-
-
-**注意**：点击各模块按钮后程序开始运行，若要停止程序请再次点击对应按钮，**不要直接关闭界面！不要直接关闭界面！不要直接关闭界面！**
-
-
-
-## 2. 使用说明
-
-### CSI显示模块
-
-可显示内容包括：CSI幅度、相位、频谱
+**Note:** After clicking each module button, the program will start running. To stop the program, please click the corresponding button again. **Do not directly close the interface!**
 
 
 
-### LoFi：基于2D图像的Wi-Fi定位标签生成器
+## 2. Functions
 
-请在提供参数 ``src_points``:四个不共线锚点在物理世界的坐标（任意单位均可）；``cv_model_path``存储目标检测模型的路径，目前默认路径使用YOLOv3，也可以更换为其他模型；``dst_points``为四个锚点在像素空间的坐标，可以选择性题提供（若不提供，则可以直接在图片中依次点击四个锚点，程序会依次返回对应坐标并存储于dst_points）
+- **CSI Display:** Displays CSI amplitude, phase, and spectrum data.
+- **LoFi: 2D Image-Based Wi-Fi Positioning Tag Generator:** Generates positioning tags using a 2D image. Users can specify anchor points in the physical world and their corresponding pixel coordinates.
+- **Intrusion Detection:** Monitors and detects unauthorized access or breaches in a designated area.
+- **Fall Detection:** Identifies and alerts on incidents of falling, utilizing wireless channel state information.
+- **Breathing Detection:** Monitors and analyzes breathing patterns.
+- **Gesture Recognition / Action Recognition / Person Recognition / Population Estimation:** Advanced functionalities for recognizing gestures, actions, individuals, and estimating the number of people in a given space. (Pending updates)
+- **Trajectory Tracking:** In development, this feature will track the movement paths of individuals or objects.
 
-
-
-### 入侵检测
-
-
-
-
-
-### 跌倒检测
+**Note:** The functionalities listed above are currently under development and will be updated as progress is made.
 
 
 
+## 3. References
 
+**Fall Detection**
 
-### 呼吸检测
+[shawnnn3di/falldewideo](https://github.com/shawnnn3di/falldewideo)
 
-
-
-### 手势识别/动作识别/人员识别/人数估计
-
-待更新
-
-
-
-### 轨迹跟踪
-
-开发中
-
-
-
-## 3. 引用
-
-更新中
-
-**跌倒检测**
+```
+@inproceedings{cai2023falldewideo,
+  title={FallDeWideo: Vision-Aided Wireless Sensing Dataset for Fall Detection with Commodity Wi-Fi Devices},
+  author={Cai, Zhijie and Chen, Tingwei and Zhou, Fujia and Cui, Yuanhao and Li, Hang and Li, Xiaoyang and Zhu, Guangxu and Shi, Qingjiang},
+  booktitle={Proceedings of the 3rd ACM MobiCom Workshop on Integrated Sensing and Communications Systems},
+  pages={7--12},
+  year={2023}
+}
+```
 
 ```
 @article{chen2024deep,
@@ -100,26 +82,82 @@ python main.py --help
 }
 ```
 
+
+
+**Gesture Recognition / Action Recognition / Person Recognition / Population Estimation**
+
+[RS2002/CSI-BERT: Official Repository for The Paper, Finding the Missing Data: A BERT-inspired Approach Against Package Loss in Wireless Sensing](https://github.com/RS2002/CSI-BERT)
+
+[RS2002/CSI-BERT2: Official Repository for The Paper,Mining Limited Data Sufficiently: A BERT-inspired Approach for CSI Time Series Application in Wireless Communication and Sensing](https://github.com/RS2002/CSI-BERT2)
+
+[RS2002/CrossFi: Official Repository for The Paper, CrossFi: A Cross Domain Wi-Fi Sensing Framework Based on Siamese Network](https://github.com/RS2002/CrossFi)
+
+[RS2002/KNN-MMD: Official Repository for The Paper,KNN-MMD: Cross Domain Wireless Sensing via Local Distribution Alignmen](https://github.com/RS2002/KNN-MMD)
+
+
+
 ```
-@inproceedings{cai2023falldewideo,
-  title={FallDeWideo: Vision-Aided Wireless Sensing Dataset for Fall Detection with Commodity Wi-Fi Devices},
-  author={Cai, Zhijie and Chen, Tingwei and Zhou, Fujia and Cui, Yuanhao and Li, Hang and Li, Xiaoyang and Zhu, Guangxu and Shi, Qingjiang},
-  booktitle={Proceedings of the 3rd ACM MobiCom Workshop on Integrated Sensing and Communications Systems},
-  pages={7--12},
-  year={2023}
+@inproceedings{zhang2023ratiofi,
+  title={RatioFi: Unlocking the Potential of WiFi CSI},
+  author={Zhang, Dengtao and Cai, Zhijie and Zhu, Guangxu and Li, Hang and Li, Xiaoyang and Shi, Qingjiang and Shen, Chao},
+  booktitle={2023 International Conference on Ubiquitous Communication (Ucom)},
+  pages={421--425},
+  year={2023},
+  organization={IEEE}
 }
 ```
 
-
-
-**手势识别/动作识别/人员识别/人数估计**
+```
+@INPROCEEDINGS{10620769,
+  author={Zhao, Zijian and Chen, Tingwei and Meng, Fanyi and Li, Hang and Li, Xiaoyang and Zhu, Guangxu},
+  booktitle={IEEE INFOCOM 2024 - IEEE Conference on Computer Communications Workshops (INFOCOM WKSHPS)}, 
+  title={Finding the Missing Data: A BERT-Inspired Approach Against Package Loss in Wireless Sensing}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-6},
+  keywords={Deep learning;Wireless communication;Interpolation;Wireless sensor networks;Transformers;Data models;Sensors;Bidirectional Encoder Representations from Transformers;Adversarial Learning;Data Recovery;Channel Statement Information;Wi-Fi Sensing},
+  doi={10.1109/INFOCOMWKSHPS61880.2024.10620769}}
+```
 
 ```
-@article{zhao2024finding,
-  title={Finding the Missing Data: A BERT-inspired Approach Against Package Loss in Wireless Sensing},
-  author={Zhao, Zijian and Chen, Tingwei and Meng, Fanyi and Li, Hang and Li, Xiaoyang and Zhu, Guangxu},
-  journal={arXiv preprint arXiv:2403.12400},
+@article{zhao2024mining,
+  title={Mining Limited Data Sufficiently: A BERT-inspired Approach for CSI Time Series Application in Wireless Communication and Sensing},
+  author={Zhao, Zijian and Meng, Fanyi and Li, Hang and Li, Xiaoyang and Zhu, Guangxu},
+  journal={arXiv preprint arXiv:2412.06861},
   year={2024}
 }
 ```
 
+```
+@article{zhao2024crossfi,
+  title={CrossFi: A Cross Domain Wi-Fi Sensing Framework Based on Siamese Network},
+  author={Zhao, Zijian and Chen, Tingwei and Cai, Zhijie and Li, Xiaoyang and Li, Hang and Chen, Qimei and Zhu, Guangxu},
+  journal={arXiv preprint arXiv:2408.10919},
+  year={2024}
+}
+```
+
+```
+@article{zhao2024knn,
+  title={KNN-MMD: Cross Domain Wi-Fi Sensing Based on Local Distribution Alignment},
+  author={Zhao, Zijian and Cai, Zhijie and Chen, Tingwei and Li, Xiaoyang and Li, Hang and Zhu, Guangxu},
+  journal={arXiv preprint arXiv:2412.04783},
+  year={2024}
+}
+```
+
+
+
+**Tracking / Localization**
+
+[RS2002/LoFi: Official Repository for The Paper, LoFi: Vision-Aided Label Generator for Wi-Fi Location and Tracing](https://github.com/RS2002/LoFi)
+
+```
+@article{zhao2024lofi,
+  title={LoFi: Vision-Aided Label Generator for Wi-Fi Localization and Tracking},
+  author={Zhao, Zijian and Chen, Tingwei and Meng, Fanyi and Cai, Zhijie and Li, Hang and Li, Xiaoyang and Zhu, Guangxu},
+  journal={arXiv preprint arXiv:2412.05074},
+  year={2024}
+}
+```
